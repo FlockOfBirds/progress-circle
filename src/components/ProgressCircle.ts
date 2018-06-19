@@ -46,8 +46,10 @@ export class ProgressCircle extends Component<ProgressCircleProps, { alertMessag
     }
 
     componentDidMount() {
-        this.createProgressCircle(this.props.circleThickness);
-        this.setProgress(this.props.value, this.props.maximumValue, this.props.displayText);
+        if (this.progressNode) {
+            this.createProgressCircle(this.props.circleThickness);
+            this.setProgress(this.props.value, this.props.maximumValue, this.props.displayText);
+        }
     }
 
     componentWillReceiveProps(newProps: ProgressCircleProps) {
@@ -70,7 +72,7 @@ export class ProgressCircle extends Component<ProgressCircleProps, { alertMessag
                 className: classNames("widget-progress-circle", this.props.className),
                 style: this.props.style
             },
-            createElement(Alert, { bootstrapStyle: "danger", message: this.state.alertMessage }),
+            createElement(Alert, { bootstrapStyle: "danger" }, this.state.alertMessage),
             createElement("div", {
                 className: classNames(
                     textClass,

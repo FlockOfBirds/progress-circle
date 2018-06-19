@@ -1,4 +1,4 @@
-import { shallow } from "enzyme";
+import { mount, shallow } from "enzyme";
 import { createElement } from "react";
 
 import * as progressbar from "progressbar.js";
@@ -9,6 +9,7 @@ import { Alert } from "../Alert";
 describe("ProgressCircle", () => {
     let progressCircle: progressbar.Circle;
     const renderProgressCircle = (props: ProgressCircleProps) => shallow(createElement(ProgressCircle, props));
+    const mountProgressCircle = (props: ProgressCircleProps) => mount(createElement(ProgressCircle, props));
     const newCircleInstance = (props: ProgressCircleProps) => renderProgressCircle(props).instance() as ProgressCircle;
     const Circle = progressbar.Circle;
     const positiveValueColor: BootstrapStyle = "primary";
@@ -172,19 +173,19 @@ describe("ProgressCircle", () => {
 
     describe("has the class", () => {
         it("widget-progress-circle-alert when the maximum value is less than one", () => {
-            const progress = renderProgressCircle({ value: 20, maximumValue: 0 });
+            const progress = mountProgressCircle({ value: 20, maximumValue: 0 });
 
             expect(progress.find(".widget-progress-circle-alert").length).toBe(1);
         });
 
         it("mx-text when the text style is text", () => {
-            const progress = renderProgressCircle({ textSize: "text", value: 20 });
+            const progress = mountProgressCircle({ textSize: "text", value: 20 });
 
             expect(progress.find(".mx-text").length).toBe(1);
         });
 
         it("of type heading when the text style is of type heading", () => {
-            const progress = renderProgressCircle({ textSize: "h1", value: 20 });
+            const progress = mountProgressCircle({ textSize: "h1", value: 20 });
 
             expect(progress.find(".h1").length).toBe(1);
         });
