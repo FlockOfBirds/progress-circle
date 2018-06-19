@@ -37,8 +37,9 @@ describe("ProgressCircle", () => {
 
     it("creates a progress circle", () => {
         spyOnCircle();
-        const progress = newCircleInstance({ value: 80, circleThickness: 50 });
+        const progress: any = newCircleInstance({ value: 80, circleThickness: 50 });
 
+        progress.setProgressNode(document.createElement("div"));
         progress.componentDidMount();
 
         expect(progressbar.Circle).toHaveBeenCalled();
@@ -49,7 +50,8 @@ describe("ProgressCircle", () => {
         const setText = progressbar.Circle.prototype.setText as jasmine.Spy;
         spyOnCircle();
 
-        const progress = newCircleInstance({ animate: false, value: 80, displayText: "percentage" });
+        const progress: any = newCircleInstance({ animate: false, value: 80, displayText: "percentage" });
+        progress.setProgressNode(document.createElement("div"));
         progress.componentDidMount();
 
         expect(setText).toHaveBeenCalled();
@@ -61,7 +63,8 @@ describe("ProgressCircle", () => {
         spyOnCircle();
 
         const progress = renderProgressCircle({ value: 80 });
-        const progressInstance = progress.instance() as ProgressCircle;
+        const progressInstance: any = progress.instance();
+        progressInstance.setProgressNode(document.createElement("div"));
         progressInstance.componentDidMount();
         progress.setProps({ value: 60 });
 
@@ -69,12 +72,12 @@ describe("ProgressCircle", () => {
     });
 
     it("recreates the progress circle when the circle thickness values are changed", () => {
-        spyOn(progressbar.Circle.prototype, "destroy").and.callThrough();
-        const destroy = progressbar.Circle.prototype.destroy as jasmine.Spy;
+        const destroy = spyOn(progressbar.Circle.prototype, "destroy").and.callThrough();
         spyOnCircle();
 
         const progress = renderProgressCircle({ value: 80, circleThickness: 50 });
-        const progressInstance = progress.instance() as ProgressCircle;
+        const progressInstance: any = progress.instance();
+        progressInstance.setProgressNode(document.createElement("div"));
         progressInstance.componentDidMount();
         progressInstance.componentWillReceiveProps({ circleThickness: 10 });
 
@@ -90,7 +93,8 @@ describe("ProgressCircle", () => {
             maximumValue: undefined,
             value: 80
         });
-        const progressInstance = progress.instance() as ProgressCircle;
+        const progressInstance: any = progress.instance() as ProgressCircle;
+        progressInstance.setProgressNode(document.createElement("div"));
         progressInstance.componentDidMount();
         progressInstance.componentWillReceiveProps({ value: 60, alertMessage: "" });
 
@@ -102,7 +106,8 @@ describe("ProgressCircle", () => {
         const destroy = progressbar.Circle.prototype.destroy as jasmine.Spy;
         spyOnCircle();
 
-        const progress = newCircleInstance({ value: 80 });
+        const progress: any = newCircleInstance({ value: 80 });
+        progress.setProgressNode(document.createElement("div"));
         progress.componentDidMount();
         progress.componentWillUnmount();
 
@@ -113,7 +118,8 @@ describe("ProgressCircle", () => {
         it("no text when display text is none", () => {
             spyOnCircle();
 
-            const progress = newCircleInstance({ value: 50, displayText: "none" });
+            const progress: any = newCircleInstance({ value: 50, displayText: "none" });
+            progress.setProgressNode(document.createElement("div"));
             progress.componentDidMount();
 
             expect(progressCircle.text.textContent).toBe("");
@@ -131,7 +137,8 @@ describe("ProgressCircle", () => {
         it("the text -- when no value is specified", () => {
             spyOnCircle();
 
-            const progress = newCircleInstance({ value: undefined });
+            const progress: any = newCircleInstance({ value: undefined });
+            progress.setProgressNode(document.createElement("div"));
             progress.componentDidMount();
 
             expect(progressCircle.text.textContent).toBe("--");
@@ -145,7 +152,8 @@ describe("ProgressCircle", () => {
                 displayText: "percentage",
                 maximumValue: -1,
                 value: 80
-            });
+            }) as any;
+            progress.setProgressNode(document.createElement("div"));
             progress.componentDidMount();
 
             expect(progressCircle.text.textContent).toBe("Invalid");
@@ -154,7 +162,8 @@ describe("ProgressCircle", () => {
         it("negative values when the value is less than zero", () => {
             spyOnCircle();
 
-            const progress = newCircleInstance({ animate: false, value: -200 });
+            const progress: any = newCircleInstance({ animate: false, value: -200 });
+            progress.setProgressNode(document.createElement("div"));
             progress.componentDidMount();
 
             expect(progressCircle.text.textContent).toBe("-200%");
@@ -163,7 +172,8 @@ describe("ProgressCircle", () => {
         it("text greater than 100% when the value is greater than the maximum", () => {
             spyOnCircle();
 
-            const progress = newCircleInstance({ value: 180 });
+            const progress: any = newCircleInstance({ value: 180 });
+            progress.setProgressNode(document.createElement("div"));
             progress.componentDidMount();
 
             expect(progressCircle.text.textContent).toBe("180%");
