@@ -24,10 +24,14 @@ export interface ProgressCircleProps {
     circleThickness?: number;
 }
 
+interface ProgressCircleState {
+    alertMessage?: string;
+}
+
 export type BootstrapStyle = "primary" | "inverse" | "success" | "info" | "warning" | "danger";
 export type ProgressTextSize = "text" |"h1" | "h2" | "h3" | "h4" | "h5" | "h6";
 
-export class ProgressCircle extends Component<ProgressCircleProps, { alertMessage?: string }> {
+export class ProgressCircle extends Component<ProgressCircleProps, ProgressCircleState> {
     static defaultProps: ProgressCircleProps = {
         animate: true,
         displayText: "percentage",
@@ -36,15 +40,16 @@ export class ProgressCircle extends Component<ProgressCircleProps, { alertMessag
     };
     private progressNode: HTMLElement|null;
     private progressCircle: Circle;
-    private setProgressNode: (node: HTMLElement|null) => void;
     private progressCircleColorClass: string;
 
-    constructor(props: ProgressCircleProps) {
-        super(props);
+    readonly state: ProgressCircleState = { alertMessage: this.props.alertMessage };
 
-        this.state = { alertMessage: props.alertMessage };
-        this.setProgressNode = (node) => this.progressNode = node;
-    }
+    // constructor(props: ProgressCircleProps) {
+    //     super(props);
+
+    //    this.state = { alertMessage: props.alertMessage };
+    //    this.setProgressNode = (node) => this.progressNode = node;
+    // }
 
     componentDidMount() {
         this.createProgressCircle(this.props.circleThickness);
@@ -134,5 +139,9 @@ export class ProgressCircle extends Component<ProgressCircleProps, { alertMessag
 
         this.progressCircle.setText(progressText);
         this.progressCircle.animate(animateValue);
+    }
+
+    private setProgressNode = (node: HTMLElement|null) => {
+        this.progressNode = node;
     }
 }

@@ -1,56 +1,51 @@
-const webpack = require("webpack");
 const path = require("path");
+const webpack = require("webpack");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 const ExtractTextPlugin = require("extract-text-webpack-plugin");
+const package = require("./package");
+const widgetName = package.widgetName;
+const name = package.widgetName.toLowerCase();
 
 const widgetConfig = {
-    entry: "./src/components/ProgressCircleContainer.ts",
+    entry: `./src/components/${widgetName}Container.ts`,
     output: {
         path: path.resolve(__dirname, "dist/tmp"),
-        filename: "src/com/mendix/widget/custom/progresscircle/ProgressCircle.js",
+        filename: `src/com/mendix/widget/custom/${name}/${widgetName}.js`,
         libraryTarget: "umd"
     },
     resolve: {
-        extensions: [ ".ts", ".js", ".json" ],
+        extensions: [ ".ts", ".js" ],
         alias: {
             "tests": path.resolve(__dirname, "./tests")
         }
     },
     module: {
         rules: [
-            { test: /\.ts$/, loader: "ts-loader" },
-            { test: /\.css$/, loader: ExtractTextPlugin.extract({
-                fallback: "style-loader",
-                use: "css-loader"
-            }) },
-            { test: /\.scss$/, loader: ExtractTextPlugin.extract({
-                fallback: "style-loader",
-                use: [
-                    { loader: "css-loader" },
-                    { loader: "sass-loader" }
-                ]
-            }) }
+            { test: /\.ts$/, use: "ts-loader" },
+            {
+                test: /\.s?css$/,
+                loader: ExtractTextPlugin.extract({
+                    fallback: "style-loader",
+                    use: "css-loader!sass-loader"
+                })
+            }
         ]
     },
+    mode: "development",
     devtool: "source-map",
     externals: [ "react", "react-dom" ],
     plugins: [
-        new CopyWebpackPlugin([
-            { from: "src/**/*.js" },
-            { from: "src/**/*.xml" }
-        ], {
-            copyUnmodified: true
-        }),
-        new ExtractTextPlugin({ filename: "./src/com/mendix/widget/custom/progresscircle/ui/ProgressCircle.css" }),
+        new CopyWebpackPlugin([ { from: "src/**/*.xml" } ], { copyUnmodified: true }),
+        new ExtractTextPlugin({ filename: `./src/com/mendix/widget/custom/${name}/ui/${widgetName}.css` }),
         new webpack.LoaderOptionsPlugin({ debug: true })
     ]
 };
 
 const previewConfig = {
-    entry: "./src/ProgressCircle.webmodeler.ts",
+    entry: `./src/${widgetName}.webmodeler.ts`,
     output: {
         path: path.resolve(__dirname, "dist/tmp"),
-        filename: "src/ProgressCircle.webmodeler.js",
+        filename: `src/${widgetName}.webmodeler.js`,
         libraryTarget: "commonjs"
     },
     resolve: {
@@ -58,7 +53,11 @@ const previewConfig = {
     },
     module: {
         rules: [
-            { test: /\.ts$/, use: "ts-loader" },
+            { test: /\.ts$/, loader: "ts-loader", options: {
+                compilerOptions: {
+                    "module": "CommonJS",
+                }
+            }},
             { test: /\.css$/, use: "raw-loader" },
             { test: /\.scss$/, use: [
                     { loader: "raw-loader" },
@@ -67,11 +66,10 @@ const previewConfig = {
             }
         ]
     },
+    mode: "development",
     devtool: "inline-source-map",
     externals: [ "react", "react-dom" ],
-    plugins: [
-        new webpack.LoaderOptionsPlugin({ debug: true })
-    ]
+    plugins: [ new webpack.LoaderOptionsPlugin({ debug: true }) ]
 };
 
 module.exports = [ widgetConfig, previewConfig ];

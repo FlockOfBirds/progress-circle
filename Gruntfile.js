@@ -1,36 +1,26 @@
 "use strict";
 const webpack = require("webpack");
 const webpackConfig = require("./webpack.config");
-const webpackConfigRelease = [ {}, {} ];
-const pluginsWidget = webpackConfig[0].plugins.slice(0);
-pluginsWidget.push(new webpack.optimize.UglifyJsPlugin());
-Object.assign(webpackConfigRelease[0], webpackConfig[0], {
+const merge = require("webpack-merge");
+
+const webpackConfigRelease = webpackConfig.map(config => merge(config, {
     devtool: false,
-    plugins: pluginsWidget
-});
-const pluginsPreview = webpackConfig[1].plugins.slice(0);
-pluginsPreview.push(new webpack.optimize.UglifyJsPlugin());
-Object.assign(webpackConfigRelease[1], webpackConfig[1], {
-    devtool: false,
-    plugins: pluginsPreview
-});
+    mode: "production",
+    optimization: { minimize: true }
+}));
 
 module.exports = function (grunt) {
-    var pkg = grunt.file.readJSON("package.json");
+    const pkg = grunt.file.readJSON("package.json");
     grunt.initConfig({
 
         watch: {
             updateWidgetFiles: {
-                files: [ "./dist/tmp/src/**/*" ],
+                files: [ "./src/**/*" ],
                 tasks: [ "webpack:develop", "file_append", "compress:dist", "copy:distDeployment", "copy:mpk" ],
                 options: {
                     debounceDelay: 250,
                     livereload: true
                 }
-            },
-            sourceFiles: {
-                files: [ "./src/**/*" ],
-                tasks: [ "copy:source" ]
             }
         },
 
@@ -66,23 +56,15 @@ module.exports = function (grunt) {
                     src: [ pkg.widgetName + ".mpk" ],
                     expand: true
                 } ]
-            },
-            source: {
-                files: [ {
-                    dest: "./dist/tmp/src",
-                    cwd: "./src/",
-                    src: [ "**/*", "!**/*.ts", "!**/*.css" ],
-                    expand: true
-                } ]
             }
         },
 
         file_append: {
             addSourceURL: {
-                files: [{
-                    append: "\n\n//# sourceURL=ProgressCircle.webmodeler.js\n",
-                    input: "dist/tmp/src/ProgressCircle.webmodeler.js"
-                }]
+                files: [ {
+                    append: `\n\n//# sourceURL=${pkg.widgetName}.webmodeler.js\n`,
+                    input: `dist/tmp/src/${pkg.widgetName}.webmodeler.js`
+                } ]
             }
         },
 
@@ -95,6 +77,7 @@ module.exports = function (grunt) {
             build: [
                 "./dist/" + pkg.version + "/" + pkg.widgetName + "/*",
                 "./dist/tmp/**/*",
+                "./dist/tsc/**/*",
                 "./dist/MxTestProject/deployment/web/widgets/" + pkg.widgetName + "/*",
                 "./dist/MxTestProject/widgets/" + pkg.widgetName + ".mpk"
             ]

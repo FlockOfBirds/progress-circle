@@ -93,7 +93,7 @@ describe("ProgressCircle", () => {
         progressInstance.componentDidMount();
         progressInstance.componentWillReceiveProps({ value: 60, alertMessage: "" });
 
-        expect(progress.state().alertMessage).toEqual("");
+        expect((progress.state() as any).alertMessage).toEqual("");
     });
 
     it("destroys progress circle on unmount", () => {
