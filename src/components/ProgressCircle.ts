@@ -1,4 +1,4 @@
-import { Component, createElement } from "react";
+import { CSSProperties, Component, createElement } from "react";
 
 import * as classNames from "classnames";
 import { Circle } from "progressbar.js";
@@ -17,7 +17,7 @@ export interface ProgressCircleProps {
     negativeValueColor?: BootstrapStyle;
     onClickAction?: () => void;
     positiveValueColor?: BootstrapStyle;
-    style?: object;
+    style?: CSSProperties;
     displayText?: DisplayText;
     textSize?: ProgressTextSize;
     value?: number;

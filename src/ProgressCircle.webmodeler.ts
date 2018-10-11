@@ -1,6 +1,6 @@
 import { Component, createElement } from "react";
 import { ProgressCircle, ProgressCircleProps } from "./components/ProgressCircle";
-import ProgressCircleContainer, { ContainerProps } from "./components/ProgressCircleContainer";
+import { ContainerProps } from "./components/ProgressCircleContainer";
 
 declare function require(name: string): string;
 
@@ -16,25 +16,24 @@ export class preview extends Component<ContainerProps, {}> {
 
     private transformProps(props: ContainerProps): ProgressCircleProps {
         return {
-            alertMessage: ProgressCircleContainer.validateProps(props),
-            circleThickness: props.circleThickness,
+            circleThickness: props.circleThickness.value,
             className: props.class,
             clickable: false,
             displayText: props.displayText,
-            displayTextValue: this.getDisplayTextValue(),
-            maximumValue: props.staticMaximumValue,
+            displayTextValue: this.getDisplayTextValue() as string,
+            maximumValue: props.staticMaximumValue.value,
             positiveValueColor: props.positiveValueColor,
-            style: ProgressCircleContainer.parseStyle(props.style),
+            style: this.props.style,
             textSize: props.textSize,
-            value: props.staticValue
+            value: props.staticValue.value
         };
     }
 
     private getDisplayTextValue() {
         if (this.props.displayText === "attribute") {
-            return `{ ${this.props.displayTextAttribute} }`;
+            return `{ ${this.props.displayTextAttribute.value} }`;
         } else if (this.props.displayText === "static") {
-            return this.props.displayTextStatic;
+            return this.props.displayTextStatic.value;
         }
 
         return "";
@@ -46,10 +45,10 @@ export function getPreviewCss() {
 }
 
 export function getVisibleProperties(valueMap: ContainerProps, visibilityMap: VisibilityMap) {
-    visibilityMap.microflow = valueMap.onClickEvent === "callMicroflow";
-    visibilityMap.nanoflow = valueMap.onClickEvent === "callNanoflow";
-    visibilityMap.page = valueMap.onClickEvent === "showPage";
-    visibilityMap.openPageAs = valueMap.onClickEvent === "showPage";
+    // visibilityMap.microflow = valueMap.onClickEvent === "callMicroflow";
+    // visibilityMap.nanoflow = valueMap.onClickEvent === "callNanoflow";
+    // visibilityMap.page = valueMap.onClickEvent === "showPage";
+    // visibilityMap.openPageAs = valueMap.onClickEvent === "showPage";
     visibilityMap.displayTextAttribute = valueMap.displayText === "attribute";
     visibilityMap.displayTextStatic = valueMap.displayText === "static";
 

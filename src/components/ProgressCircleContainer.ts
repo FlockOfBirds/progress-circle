@@ -1,106 +1,58 @@
-import { Component, createElement } from "react";
+import { CSSProperties, Component, createElement } from "react";
 import { BootstrapStyle, ProgressCircle, ProgressTextSize } from "./ProgressCircle";
-import { Alert } from "./Alert";
 
 interface WrapperProps {
     class: string;
-    mxObject?: mendix.lib.MxObject;
-    style: string;
-    mxform: mxui.lib.form._FormBase;
+    style: CSSProperties;
 }
 
 export interface ContainerProps extends WrapperProps {
-    animate: boolean;
-    circleThickness: number;
+    animate: PluginWidget.EditableValue<boolean>;
+    circleThickness: PluginWidget.DynamicValue<number>;
     displayText: DisplayText;
-    displayTextAttribute: string;
-    displayTextStatic: string;
-    maximumValueAttribute: string;
-    microflow?: string;
-    nanoflow: Nanoflow;
+    displayTextAttribute: PluginWidget.EditableValue<string>;
+    displayTextStatic: PluginWidget.DynamicValue<string>;
+    maximumValueAttribute: PluginWidget.EditableValue<number>;
     negativeValueColor: BootstrapStyle;
-    onClickEvent: OnClickOptions;
-    page?: string;
-    progressAttribute: string;
+    progressAttribute: PluginWidget.EditableValue<number>;
     positiveValueColor: BootstrapStyle;
     textSize: ProgressTextSize;
-    openPageAs: PageLocation;
-    staticValue: number;
-    staticMaximumValue: number;
+    staticValue: PluginWidget.DynamicValue<number>;
+    staticMaximumValue: PluginWidget.DynamicValue<number>;
+    onClickAction: PluginWidget.ActionValue;
 }
 
-interface Nanoflow {
-    nanoflow: object[];
-    paramsSpec: { Progress: string };
-}
-
-interface ContainerState {
-    alertMessage?: string;
-    maximumValue?: number;
-    showAlert?: boolean;
-    progressValue?: number;
-    displayTextAttributeValue: string;
-}
+type Handler = () => void;
 
 export type DisplayText = "none" | "value" | "percentage" | "static" | "attribute";
-type OnClickOptions = "doNothing" | "showPage" | "callMicroflow" | "callNanoflow";
-type PageLocation = "content"| "popup" | "modal";
 
-export default class ProgressCircleContainer extends Component<ContainerProps, ContainerState> {
-    private subscriptionHandles: number[];
+export default class ProgressCircleContainer extends Component<ContainerProps> {
+    private readonly clickHandler: Handler = this.handleOnClick.bind(this);
+
     private defaultMaximumValue = 100;
-    private attributeCallback: (mxObject: mendix.lib.MxObject) => () => void;
-
-    constructor(props: ContainerProps) {
-        super(props);
-
-        const alertMessage = ProgressCircleContainer.validateProps(props);
-        this.state = {
-            alertMessage,
-            maximumValue: this.getValue(props.maximumValueAttribute, props.mxObject),
-            progressValue: this.getValue(props.progressAttribute, props.mxObject),
-            showAlert: !!alertMessage,
-            displayTextAttributeValue: ""
-        };
-        this.subscriptionHandles = [];
-        this.handleOnClick = this.handleOnClick.bind(this);
-        this.attributeCallback = mxObject => () => this.updateAttributeValues(mxObject);
-    }
 
     render() {
-        if (this.state.showAlert) {
-            return createElement(Alert, {
-                bootstrapStyle: "danger",
-                className: "widget-progress-circle-alert",
-                message: this.state.alertMessage
-            });
-        }
+        const maximumValue = this.props.maximumValueAttribute !== undefined
+            ? this.props.maximumValueAttribute.value
+            : (this.props.staticMaximumValue && this.props.staticMaximumValue.value)
+                ? this.props.staticMaximumValue.value
+                : this.defaultMaximumValue;
 
         return createElement(ProgressCircle, {
-            alertMessage: this.state.alertMessage,
             animate: this.hasAnimation(),
-            circleThickness: this.props.circleThickness,
+            circleThickness: this.props.circleThickness.value,
             className: this.props.class,
-            clickable: this.props.onClickEvent !== "doNothing",
+            clickable: !!this.props.onClickAction,
             displayText: this.props.displayText,
             displayTextValue: this.getDisplayTextValue(),
-            maximumValue: this.props.maximumValueAttribute ? this.state.maximumValue : this.props.staticMaximumValue,
+            maximumValue,
             negativeValueColor: this.props.negativeValueColor,
-            onClickAction: this.handleOnClick,
+            onClickAction: this.clickHandler,
             positiveValueColor: this.props.positiveValueColor,
-            style: ProgressCircleContainer.parseStyle(this.props.style),
+            style: this.props.style,
             textSize: this.props.textSize,
-            value: this.props.progressAttribute ? this.state.progressValue || 0 : this.props.staticValue
+            value: this.props.progressAttribute ? this.props.progressAttribute.value || 0 : this.props.staticValue.value
         });
-    }
-
-    componentWillReceiveProps(newProps: ContainerProps) {
-        this.resetSubscription(newProps.mxObject);
-        this.updateAttributeValues(newProps.mxObject);
-    }
-
-    componentWillUnmount() {
-        this.subscriptionHandles.forEach((handle) => window.mx.data.unsubscribe(handle));
     }
 
     private hasAnimation() {
@@ -108,112 +60,26 @@ export default class ProgressCircleContainer extends Component<ContainerProps, C
         // https://github.com/kimmobrunfeldt/progressbar.js/issues/79
         const isIe11 = !!(window as any).MSInputMethodContext && !!(document as any).documentMode;
         const isEdge = window.navigator.userAgent.indexOf("Edge/") > 0;
-        if ((isIe11 || isEdge) && this.props.circleThickness >= 7 && this.props.animate) {
+        if ((isIe11 || isEdge) && this.props.circleThickness.value as number >= 7 && this.props.animate) {
             logger.warn("Disabled animation on IE and Edge");
             return false;
         }
-        return this.props.animate;
-    }
-
-    public static validateProps(props: ContainerProps): string {
-        let errorMessage = "";
-        if (props.onClickEvent === "callMicroflow" && !props.microflow) {
-            errorMessage = "on click microflow is required";
-        } else if (props.onClickEvent === "callNanoflow" && !props.nanoflow.nanoflow) {
-            errorMessage = "on click nanoflow is required";
-        } else if (props.onClickEvent === "showPage" && !props.page) {
-            errorMessage = "on click page is required";
-        }
-
-        return errorMessage && `Error in progress circle configuration: ${errorMessage}`;
-    }
-
-    public static parseStyle(style = ""): { [key: string]: string } {
-        try {
-            return style.split(";").reduce<{ [key: string]: string }>((styleObject, line) => {
-                const pair = line.split(":");
-                if (pair.length === 2) {
-                    const name = pair[0].trim().replace(/(-.)/g, match => match[1].toUpperCase());
-                    styleObject[name] = pair[1].trim();
-                }
-                return styleObject;
-            }, {});
-        } catch (error) {
-            // tslint:disable-next-line no-console
-            console.log("Failed to parse style", style, error);
-        }
-
-        return {};
-    }
-
-    private getValue(attribute: string, mxObject?: mendix.lib.MxObject): number | undefined {
-        return mxObject ? parseFloat(mxObject.get(attribute) as string) : undefined;
+        return this.props.animate.value as boolean;
     }
 
     private getDisplayTextValue() {
         if (this.props.displayText === "attribute") {
-            return this.state.displayTextAttributeValue;
+            return this.props.displayTextAttribute ? this.props.displayTextAttribute.value : "";
         } else if (this.props.displayText === "static") {
-            return this.props.displayTextStatic;
+            return this.props.displayTextStatic.value;
         }
 
         return "";
     }
 
-    private updateAttributeValues(mxObject?: mendix.lib.MxObject) {
-        const maxValue = this.getValue(this.props.maximumValueAttribute, mxObject);
-        this.setState({
-            maximumValue: (maxValue || maxValue === 0) ? maxValue : this.defaultMaximumValue,
-            progressValue: this.getValue(this.props.progressAttribute, mxObject),
-            displayTextAttributeValue: mxObject ? mxObject.get(this.props.displayTextAttribute) as string : ""
-        });
-    }
-
-    private resetSubscription(mxObject?: mendix.lib.MxObject) {
-        this.subscriptionHandles.forEach(window.mx.data.unsubscribe);
-
-        if (mxObject) {
-            this.subscriptionHandles.push(window.mx.data.subscribe({
-                callback: this.attributeCallback(mxObject),
-                guid: mxObject.getGuid()
-            }));
-
-            [ this.props.displayTextAttribute, this.props.progressAttribute, this.props.maximumValueAttribute ].forEach(attr => {
-                this.subscriptionHandles.push(window.mx.data.subscribe({
-                    attr,
-                    callback: this.attributeCallback(mxObject),
-                    guid: mxObject.getGuid()
-                }));
-            });
-        }
-    }
-
     private handleOnClick() {
-        const { mxObject, microflow, nanoflow, onClickEvent, openPageAs, page, mxform } = this.props;
-
-        if (mxObject && mxObject.getGuid()) {
-            const context = new window.mendix.lib.MxContext();
-            context.setContext(mxObject.getEntity(), mxObject.getGuid());
-            if (onClickEvent === "callMicroflow" && microflow) {
-                window.mx.ui.action(microflow, {
-                    context,
-                    error: error => window.mx.ui.error(`Error while executing microflow ${microflow}: ${error.message}`),
-                    origin: mxform
-                });
-            } else if (onClickEvent === "callNanoflow" && nanoflow.nanoflow) {
-                window.mx.data.callNanoflow({
-                    context,
-                    error: error => window.mx.ui.error(`An error occurred while executing the nanoflow: ${error.message}`),
-                    nanoflow,
-                    origin: mxform
-                });
-            } else if (onClickEvent === "showPage" && page) {
-                window.mx.ui.openForm(page, {
-                    context,
-                    error: error => window.mx.ui.error(`Error while opening page ${page}: ${error.message}`),
-                    location: openPageAs
-                });
-            }
+        if (this.props.onClickAction) {
+            this.props.onClickAction.execute();
         }
     }
 }
